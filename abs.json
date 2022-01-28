@@ -1,0 +1,15 @@
+{
+  "name": "zw",
+  "cxx_options": {
+    "rtti": false,
+    "async_await": true,
+    "standard": "c++20"
+  },
+  "output_type": "static_library",
+  "link_libraries": ["ole32.lib"],
+  "supported_targets": [
+    "win32",
+    "win64"
+  ],
+  "dependencies": []
+}
