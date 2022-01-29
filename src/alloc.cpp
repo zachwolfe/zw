@@ -76,6 +76,14 @@ AllocationHeader* find_header(Address address) {
     return (AllocationHeader*)((uintptr_t)address - sizeof(AllocationHeader));
 }
 
+void Allocator::check_header(void* address) {
+    #ifdef ZW_ALLOC_SAFETY
+    AllocationHeader* header = find_header(address);
+    assert(header->allocator_id == allocator_id);
+    assert(header->thread_id == thread_id);
+    #endif
+}
+
 // GlobalAllocator
 void* GlobalAllocator::alloc(size_t size, size_t alignment) {
     void* base = malloc(size + sizeof(AllocationHeader) + alignment);
@@ -184,18 +192,9 @@ void* LinearAllocator::realloc(void* address, size_t size, size_t alignment) {
             return nullptr;
         }
     } else {
-        uintptr_t addr = (uintptr_t)address;
-        AllocationHeader* header = find_header(addr);
+        check_header(address);
 
-        #ifdef ZW_ALLOC_SAFETY
-        if(header->allocator_id != allocator_id) {
-            zw_dbg(header->allocator_id);
-            zw_dbg(allocator_id);
-        }
-        assert(header->allocator_id == allocator_id);
-        assert(header->thread_id == thread_id);
-        #endif
-
+        AllocationHeader* header = find_header(address);
         // There's nothing I can do in this case other than allocate a totally new buffer.
         void* new_allocation = alloc(size, alignment);
         if(!new_allocation) return nullptr;
@@ -205,15 +204,54 @@ void* LinearAllocator::realloc(void* address, size_t size, size_t alignment) {
     }
 }
 void LinearAllocator::free(void* address) {
-    #ifdef ZW_ALLOC_SAFETY
-    AllocationHeader* header = find_header(address);
-    assert(header->allocator_id == allocator_id);
-    assert(header->thread_id == thread_id);
-    #endif
+    check_header(address);
 }
 void LinearAllocator::reset() {
     bump = 0;
     previous_allocation = 0;
+}
+
+// ArenaAllocator
+void ArenaAllocator::init() {
+    block_size = max(block_size, sizeof(void*));
+    block_alignment = max(block_alignment, alignof(void*));
+    void* prev_allocation = nullptr;
+    while(void* next_allocation = LinearAllocator::alloc(block_size, block_alignment)) {
+        void** free_node = (void**)next_allocation;
+        *free_node = prev_allocation;
+        prev_allocation = next_allocation;
+    }
+    first_free_block = prev_allocation;
+}
+void* ArenaAllocator::alloc(size_t size, size_t alignment) {
+    assert(size <= block_size);
+    assert(alignment <= block_alignment);
+    assert(false);
+    if(first_free_block) {
+        void* block = first_free_block;
+        void* next = *(void**)first_free_block;
+        first_free_block = next;
+        return block;
+    } else {
+        return nullptr;
+    }
+}
+void* ArenaAllocator::realloc(void* address, size_t size, size_t alignment) {
+    if(!address) return alloc(size, alignment);
+    check_header(address);
+
+    assert(size <= block_size);
+    assert(alignment <= block_alignment);
+    return address;
+}
+void ArenaAllocator::free(void* address) {
+    check_header(address);
+    *(void**)address = first_free_block;
+    first_free_block = address;
+}
+void ArenaAllocator::reset() {
+    LinearAllocator::reset();
+    init();
 }
 
 };

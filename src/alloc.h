@@ -81,7 +81,7 @@ Value* zw_make_with_alloc(zw::Allocator* allocator) {
 template<typename Value, typename Param0, typename... Params>
 Value* zw_make_with_alloc(zw::Allocator* allocator, Param0&& param0, Params&&... params) {
     zw_set_ctx(allocator, allocator);
-    return zw_make_with_alloc<Value>(std::forward<Param0>(param0), std::forward<Params>(params...));
+    return zw_make<Value>(std::forward<Param0>(param0), std::forward<Params>(params)...);
 }
 
 template<typename Value>
@@ -129,6 +129,8 @@ protected:
     // to claim an allocator_id of 0.
     uint32_t allocator_id, thread_id;
     Allocator(uint32_t allocator_id, uint32_t thread_id) : allocator_id(allocator_id), thread_id(thread_id) {}
+
+    void check_header(void* address);
 #endif
 
 public:
@@ -178,6 +180,34 @@ public:
 
     InlineAllocator(const InlineAllocator<Size>& other) = delete;
     InlineAllocator(InlineAllocator<Size>&& other) = delete;
+};
+
+class ArenaAllocator: public LinearAllocator {
+protected:
+    size_t block_size;
+    size_t block_alignment;
+    void* first_free_block;
+    void init();
+public:
+    ArenaAllocator(uint8_t* buffer, size_t buffer_size, size_t block_size, size_t block_alignment) : LinearAllocator(buffer, buffer_size), block_size(block_size), block_alignment(block_alignment), first_free_block(first_free_block) {
+        init();
+    }
+
+    void* alloc(size_t size, size_t alignment) override;
+    void free(void* address) override;
+    void* realloc(void* address, size_t size, size_t alignment) override;
+
+    void reset() override;
+};
+
+template<size_t Size>
+class InlineArenaAllocator: public ArenaAllocator {
+    uint8_t storage[Size];
+public:
+    InlineArenaAllocator(size_t block_size, size_t block_alignment) : ArenaAllocator(storage, Size, block_size, block_alignment) {}
+
+    InlineArenaAllocator(const InlineArenaAllocator<Size>& other) = delete;
+    InlineArenaAllocator(InlineArenaAllocator<Size>&& other) = delete;
 };
 
 template<typename Wrapped>
