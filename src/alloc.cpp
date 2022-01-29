@@ -226,7 +226,6 @@ void ArenaAllocator::init() {
 void* ArenaAllocator::alloc(size_t size, size_t alignment) {
     assert(size <= block_size);
     assert(alignment <= block_alignment);
-    assert(false);
     if(first_free_block) {
         void* block = first_free_block;
         void* next = *(void**)first_free_block;
