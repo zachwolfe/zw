@@ -75,6 +75,12 @@ struct GenericStringSlice {
         String val = *this;
         return std::move(val);
     }
+
+    bool operator==(GenericStringSlice<Char> other) const {
+        if(size != other.size) return false;
+
+        return memcmp(data, other.data, sizeof(Char) * size) == 0;
+    }
 };
 
 using StringSlice = GenericStringSlice<char>;
