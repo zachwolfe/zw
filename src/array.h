@@ -6,11 +6,54 @@
 
 namespace zw {
 
+template<typename Iter>
+class EnumerateIterator {
+    size_t number;
+    Iter iter;
+public:
+    using Element = std::pair<size_t, typename Iter::Element>;
+
+    EnumerateIterator(Iter&& iter) : number(0), iter(std::move(iter)) {}
+
+    EnumerateIterator<Iter>& operator++() {
+        ++iter;
+        ++number;
+        return *this;
+    }
+
+    bool operator==(const EnumerateIterator<Iter>& other) const { return iter == other.iter; }
+    bool operator!=(const EnumerateIterator<Iter>& other) const { return iter != other.iter; }
+    Element operator*() {
+        return std::make_pair(number, *iter);
+    }
+};
+
+template<typename Iter>
+class EnumerateIterable {
+    Iter iterable;
+public:
+    EnumerateIterable(Iter&& iterable) : iterable(std::move(iterable)) {}
+    using Iterator = EnumerateIterator<typename Iter::Iterator>;
+
+    Iterator begin() const { return Iterator(iterable.begin()); }
+    Iterator end() const { return Iterator(iterable.end()); }
+};
+
+template<typename Iter>
+class Iterable {
+public:
+    auto enumerate() {
+        return EnumerateIterable(std::move(*static_cast<Iter*>(this)));
+    }
+};
+
 template<typename T>
 class ConstArrayIterator {
     const T* loc;
 
 public:
+    using Element = const T&;
+
     ConstArrayIterator(const T* loc) : loc(loc) {}
 
     ConstArrayIterator<T>& operator++() {
@@ -18,20 +61,22 @@ public:
         return *this;
     }
 
-    bool operator==(const ConstArrayIterator<T>& other) { return loc == other.loc; }
-    bool operator!=(const ConstArrayIterator<T>& other) { return loc != other.loc; }
-    const T& operator*() { return *loc; }
+    bool operator==(const ConstArrayIterator<T>& other) const { return loc == other.loc; }
+    bool operator!=(const ConstArrayIterator<T>& other) const { return loc != other.loc; }
+    Element operator*() { return *loc; }
 };
 
 template<typename T>
-class ConstArrayIterable {
+class ConstArrayIterable: public Iterable<ConstArrayIterable<T>> {
     const T* data;
     size_t size;
 
 public:
+    using Iterator = ConstArrayIterator<T>;
+
     ConstArrayIterable(const T* data, size_t size) : data(data), size(size) {}
-    ConstArrayIterator<T> begin() { return data; }
-    ConstArrayIterator<T> end() { return data + size; }
+    Iterator begin() const { return data; }
+    Iterator end() const { return data + size; }
 };
 
 template<typename T>
@@ -39,6 +84,8 @@ class MutArrayIterator {
     T* loc;
 
 public:
+    using Element = T&;
+
     MutArrayIterator(T* loc) : loc(loc) {}
 
     MutArrayIterator<T>& operator++() {
@@ -46,20 +93,21 @@ public:
         return *this;
     }
 
-    bool operator==(const MutArrayIterator<T>& other) { return loc == other.loc; }
-    bool operator!=(const MutArrayIterator<T>& other) { return loc != other.loc; }
+    bool operator==(const MutArrayIterator<T>& other) const { return loc == other.loc; }
+    bool operator!=(const MutArrayIterator<T>& other) const { return loc != other.loc; }
     T& operator*() { return *loc; }
 };
 
 template<typename T>
-class MutArrayIterable {
+class MutArrayIterable: public Iterable<MutArrayIterable<T>> {
     T* data;
     size_t size;
 
 public:
+    using Iterator = MutArrayIterator<T>;
     MutArrayIterable(T* data, size_t size) : data(data), size(size) {}
-    MutArrayIterator<T> begin() { return data; }
-    MutArrayIterator<T> end() { return data + size; }
+    MutArrayIterator<T> begin() const { return data; }
+    MutArrayIterator<T> end() const { return data + size; }
 };
 
 template<typename T>
@@ -67,6 +115,8 @@ class MoveArrayIterator {
     T* loc;
 
 public:
+    using Element = T&;
+
     MoveArrayIterator(T* loc) : loc(loc) {}
 
     MoveArrayIterator<T>& operator++() {
@@ -74,8 +124,8 @@ public:
         return *this;
     }
 
-    bool operator==(const MoveArrayIterator<T>& other) { return loc == other.loc; }
-    bool operator!=(const MoveArrayIterator<T>& other) { return loc != other.loc; }
+    bool operator==(const MoveArrayIterator<T>& other) const { return loc == other.loc; }
+    bool operator!=(const MoveArrayIterator<T>& other) const { return loc != other.loc; }
     T& operator*() { return *loc; }
 };
 
@@ -83,11 +133,13 @@ template<typename T>
 class Array;
 
 template<typename T>
-class MoveArrayIterable {
+class MoveArrayIterable: public Iterable<MoveArrayIterable<T>> {
     T* data;
     size_t size;
 
 public:
+    using Iterator = MoveArrayIterator<T>;
+
     MoveArrayIterable(T* data, size_t size) : data(data), size(size) {}
     MoveArrayIterable(MoveArrayIterable<T>&& other) {
         data = other.data;
@@ -96,8 +148,8 @@ public:
         other.data = nullptr;
         other.size = 0;
     }
-    MoveArrayIterator<T> begin() { return data; }
-    MoveArrayIterator<T> end() { return data + size; }
+    MoveArrayIterator<T> begin() const { return data; }
+    MoveArrayIterator<T> end() const { return data + size; }
     ~MoveArrayIterable() {
         Array<T> temp(data, size, size);
     }
