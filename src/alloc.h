@@ -12,6 +12,13 @@ ZW_DECLARE_CTX_VAR(zw::Allocator*, allocator);
 ZW_DECLARE_CTX_VAR(zw::Allocator*, temp_allocator);
 ZW_DECLARE_CTX_VAR(bool, is_explicitly_copying);
 
+#define use_temp_allocator() zw_set_ctx(allocator, zw_get_ctx(temp_allocator))
+#define using_temp_allocator(code) \
+    auto ZW_CONCAT(__allocator_old_value__, __LINE__) = zw_get_ctx(allocator); \
+    zw_set_ctx(allocator, zw_get_ctx(temp_allocator), first); \
+    code; \
+    zw_set_ctx(allocator, ZW_CONCAT(__allocator_old_value__, __LINE__), second);
+
 #define ZW_ALLOC_SAFETY
 #define ZW_AUDIT_IMPLICIT_COPIES
 
