@@ -5,6 +5,10 @@
 #include "misc.h"
 #include "fmt.h"
 
+ZW_DEFINE_CTX_VAR(zw::Allocator*, allocator, &zw::global_allocator);
+ZW_DEFINE_CTX_VAR(zw::Allocator*, temp_allocator, &zw::temp_allocator);
+ZW_DEFINE_CTX_VAR(bool, is_explicitly_copying, false);
+
 void* zw_alloc(zw::Allocator* allocator, size_t size, size_t alignment) {
     return allocator->alloc(size, alignment);
 }

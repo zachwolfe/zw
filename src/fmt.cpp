@@ -6,6 +6,9 @@
 
 using namespace zw;
 
+ZW_DEFINE_CTX_VAR(zw::Printer*, printer, &zw::stdout_printer);
+ZW_DEFINE_CTX_VAR(uint32_t, indent, 0);
+
 namespace zw {
 
 extern StdFilePrinter stdout_printer{stdout};

@@ -6,6 +6,12 @@
 
 #include "context.h"
 
+namespace zw { class Allocator; };
+
+ZW_DECLARE_CTX_VAR(zw::Allocator*, allocator);
+ZW_DECLARE_CTX_VAR(zw::Allocator*, temp_allocator);
+ZW_DECLARE_CTX_VAR(bool, is_explicitly_copying);
+
 #define ZW_ALLOC_SAFETY
 #define ZW_AUDIT_IMPLICIT_COPIES
 

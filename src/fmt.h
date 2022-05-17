@@ -5,6 +5,11 @@
 #include "string.h"
 #include "context.h"
 
+namespace zw { class Printer; };
+
+ZW_DECLARE_CTX_VAR(zw::Printer*, printer);
+ZW_DECLARE_CTX_VAR(uint32_t, indent);
+
 // Narrow strings
 template<typename... Ds>
 void zw_print(zw::StringSlice format, Ds&&... ds);

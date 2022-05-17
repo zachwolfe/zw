@@ -12,12 +12,15 @@ Only Windows, for now.
 
 ### Context system
 
-Inspired by newer languages like Jai and Odin, ZW supports a context system through which values will be implicitly passed down the stack, and can be modified locally without affecting the caller. The set of values that can be passed is fixed at compile-time in a struct in the `context.h` file. To get or set a context value, use the `zw_get_ctx` and `zw_set_ctx` macros. Under the hood, this is implemented using a combination of thread local variables and RAII.
+Inspired by newer languages like Jai and Odin, ZW supports a context system through which values will be implicitly passed down the stack, and can be modified locally without affecting the caller. The set of values that can be passed is extensible, via the `ZW_DECLARE_CTX_VAR` and `ZW_DEFINE_CTX_VAR`. To get or set a context value, use the `zw_get_ctx` and `zw_set_ctx` macros. Under the hood, this is implemented with thread local variables and RAII.
 
 Example:
 ```cpp
 #include <stdio.h>
-#include <zw/context.h> // must be modified to include fib_argument
+#include <zw/context.h>
+
+// Defines a new integer thread-local variable initialized with the value 0.
+ZW_DEFINE_CTX_VAR(int, fib_argument, 0);
 
 int fib() {
     if(zw_get_ctx(fib_argument) < 2) {
@@ -87,7 +90,7 @@ int main() {
 
 ### ZwObject: prevention of implicit copies
 
-When the `ZW_AUDIT_IMPLICIT_COPIES` is defined (which it is by default), if a class inherits from ZwObject and calls ZwObject's copy constructor its own copy constructor and copy assignment operator (directly or indirectly) will fail to complete unless explicitly performed using the `gt_copy()` or `gt_copy_to()` functions.
+When the `ZW_AUDIT_IMPLICIT_COPIES` macro is defined (which it is by default), if a class inherits from ZwObject and calls ZwObject's copy constructor, its own copy constructor and copy assignment operator (directly or indirectly) will only work if explicitly performed using the `gt_copy()` or `gt_copy_to()` functions.
 
 Example:
 
