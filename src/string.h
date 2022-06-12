@@ -31,6 +31,16 @@ template<typename Char>
     }
 };
 
+namespace priv {
+    inline char to_lower(char c) {
+        return (char)tolower(c);
+    }
+
+    inline wchar_t to_lower(wchar_t c) {
+        return (wchar_t)towlower(c);
+    }
+};
+
 template<typename Char>
 struct GenericStringSlice {
     const Char* data = 0;
@@ -42,12 +52,12 @@ struct GenericStringSlice {
         size = impl::c_str_size(c_string);
     }
 
-    constexpr Char operator[](size_t i) {
+    constexpr Char operator[](size_t i) const {
         assert(i < size);
         return data[i];
     }
 
-    constexpr GenericStringSlice operator[](Range range) {
+    constexpr GenericStringSlice operator[](Range range) const {
         assert(range.upper_bound <= size);
         assert(range.lower_bound <= range.upper_bound);
         return {&data[range.lower_bound], range.upper_bound - range.lower_bound};
@@ -76,6 +86,25 @@ struct GenericStringSlice {
         return std::move(val);
     }
 
+    bool starts_with(GenericStringSlice<Char> other) const {
+        if(other.size > size) return false;
+
+        return memcmp(data, other.data, sizeof(Char) * other.size) == 0;
+    }
+    bool starts_with_ignoring_case(GenericStringSlice<Char> other) const {
+        if(other.size > size) return false;
+
+        for(size_t i = 0; i < other.size; i++) {
+            if(priv::to_lower(other[i]) != priv::to_lower((*this)[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    bool is_equal_to_ignoring_case(GenericStringSlice<Char> other) const {
+        return (size == other.size) && starts_with_ignoring_case(other);
+    }
     bool operator==(GenericStringSlice<Char> other) const {
         if(size != other.size) return false;
 
@@ -140,6 +169,9 @@ public:
     operator GenericStringSlice<Char>() const {
         return GenericStringSlice<Char>(data(), size());
     }
+    GenericStringSlice<Char> as_slice() const {
+        return *this;
+    }
 
     void append(GenericStringSlice<Char> slice) {
         if(slice.size) {
@@ -157,18 +189,17 @@ public:
         characters.push(0);
     }
 
-    bool starts_with(GenericStringSlice<Char> slice) {
-        if(slice.size > size()) {
-            return false;
-        }
-
-        for(size_t i = 0; i < slice.size; i++) {
-            if(slice[i] != characters.data()[i]) {
-                return false;
-            }
-        }
-
-        return true;
+    bool starts_with(GenericStringSlice<Char> slice) const {
+        return as_slice().starts_with(slice);
+    }
+    bool starts_with_ignoring_case(GenericStringSlice<Char> slice) const {
+        return as_slice().starts_with_ignoring_case(slice);
+    }
+    bool is_equal_to_ignoring_case(GenericStringSlice<Char> slice) const {
+        return as_slice().is_equal_to_ignoring_case(slice);
+    }
+    bool operator==(GenericStringSlice<Char> slice) const {
+        return as_slice() == slice;
     }
 };
 
