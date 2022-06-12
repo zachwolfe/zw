@@ -19,7 +19,6 @@ using WideString = GenericString<wchar_t>;
 namespace impl {
 // Like strlen, but generic and slower.
 template<typename Char>
-
     constexpr inline size_t c_str_size(const Char* c_string) {
         size_t size = 0;
         if(c_string) {
@@ -96,6 +95,23 @@ struct GenericStringSlice {
 
         for(size_t i = 0; i < other.size; i++) {
             if(priv::to_lower(other[i]) != priv::to_lower((*this)[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    bool ends_with(GenericStringSlice<Char> other) const {
+        if(other.size > size) return false;
+
+        return memcmp(data + size - other.size, other.data, sizeof(Char) * other.size) == 0;
+    }
+    bool ends_with_ignoring_case(GenericStringSlice<Char> other) const {
+        if(other.size > size) return false;
+
+        size_t begin = size - other.size;
+        for(size_t i = begin; i < size; i++) {
+            if(priv::to_lower(other[i - begin]) != priv::to_lower((*this)[i])) {
                 return false;
             }
         }
@@ -199,6 +215,12 @@ public:
     }
     bool starts_with_ignoring_case(GenericStringSlice<Char> slice) const {
         return as_slice().starts_with_ignoring_case(slice);
+    }
+    bool ends_with(GenericStringSlice<Char> slice) const {
+        return as_slice().ends_with(slice);
+    }
+    bool ends_with_ignoring_case(GenericStringSlice<Char> slice) const {
+        return as_slice().ends_with_ignoring_case(slice);
     }
     bool is_equal_to_ignoring_case(GenericStringSlice<Char> slice) const {
         return as_slice().is_equal_to_ignoring_case(slice);
