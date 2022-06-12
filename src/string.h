@@ -165,6 +165,7 @@ public:
     }
 
     const Char* data() const { return characters.data(); }
+    Char* data() { return characters.data(); }
     size_t size() const { return characters.size() ? characters.size() - 1 : 0; }
     operator GenericStringSlice<Char>() const {
         return GenericStringSlice<Char>(data(), size());
@@ -187,6 +188,10 @@ public:
     void push(Char c) {
         characters[size()] = c;
         characters.push(0);
+    }
+    void resize(size_t new_size) {
+        characters.resize(new_size + 1);
+        characters[size()] = 0;
     }
 
     bool starts_with(GenericStringSlice<Char> slice) const {
