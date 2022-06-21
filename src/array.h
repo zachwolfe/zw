@@ -3,6 +3,7 @@
 #include <utility>
 #include <assert.h>
 #include "alloc.h"
+#include "range.h"
 
 namespace zw {
 
@@ -257,16 +258,21 @@ public:
         _size = 0;
     }
 
-    void erase(size_t index) {
-        assert(index < _size);
+    void erase_range(Range range) {
+        assert(range.lower_bound <= range.upper_bound);
+        assert(range.upper_bound <= _size);
         if constexpr(!std::is_trivially_destructible_v<T>) {
-            _data[index].~T();
+            for(size_t i: range) {
+                _data[i].~T();
+            }
         }
-        for(size_t i = index; i < _size - 1; i++) {
-            std::swap(_data[i], _data[i+1]);
+        size_t num_removed = range.upper_bound - range.lower_bound;
+        for(size_t i = range.lower_bound; i < _size - num_removed; i++) {
+            std::swap(_data[i], _data[i+num_removed]);
         }
-        _size--;
+        _size -= num_removed;
     }
+    void erase(size_t index) { erase_range(Range(index, index+1)); }
 
     template<typename F>
     void erase_if(F should_erase) {
