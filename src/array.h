@@ -194,7 +194,7 @@ public:
         if constexpr(std::is_trivially_copyable_v<T>) {
             memcpy(_data, other._data, sizeof(T) * other._size);
         } else {
-            for(size_t i = 0; i < other._size; i++) {
+            for(auto i: Range(other._size)) {
                 new(&_data[i]) T(other._data[i]);
             }
         }
@@ -248,10 +248,11 @@ public:
     const T* data() const {
         return _data;
     }
+    Range indices() const { return Range(_size); }
 
     void clear() {
         if constexpr(!std::is_trivially_destructible_v<T>) {
-            for(size_t i = 0; i < _size; i++) {
+            for(auto i: indices()) {
                 _data[i].~T();
             }
         }
@@ -262,12 +263,12 @@ public:
         assert(range.lower_bound <= range.upper_bound);
         assert(range.upper_bound <= _size);
         if constexpr(!std::is_trivially_destructible_v<T>) {
-            for(size_t i: range) {
+            for(auto i: range) {
                 _data[i].~T();
             }
         }
         size_t num_removed = range.upper_bound - range.lower_bound;
-        for(size_t i = range.lower_bound; i < _size - num_removed; i++) {
+        for(auto i: Range(range.lower_bound, _size - num_removed)) {
             std::swap(_data[i], _data[i+num_removed]);
         }
         _size -= num_removed;
@@ -278,7 +279,7 @@ public:
     void erase_if(F should_erase) {
         size_t cursor = 0;
         size_t num_erased = 0;
-        for(size_t i = 0; i < _size; i++) {
+        for(auto i: indices()) {
             if(should_erase(i, _data[i])) {
                 num_erased++;
                 if constexpr(!std::is_trivially_destructible_v<T>) {
@@ -309,14 +310,14 @@ public:
     void resize(size_t size) requires std::default_initializable<T> {
         if(size < _size) {
             if constexpr(!std::is_trivially_destructible_v<T>) {
-                for(size_t i = size; i < _size; i++) {
+                for(auto i: Range(size, _size)) {
                     _data[i].~T();
                 }
             }
             _size = size;
         } else if(size > _size) {
             reserve(size);
-            for(size_t i = _size; i < size; i++) {
+            for(auto i: Range(_size, size)) {
                 new(&_data[i]) T();
             }
             _size = size;
@@ -358,7 +359,7 @@ public:
     ~Array() {
         if(_data) {
             if constexpr(!std::is_trivially_destructible_v<T>) {
-                for(size_t i = 0; i < _size; i++) {
+                for(auto i: indices()) {
                     _data[i].~T();
                 }
             }

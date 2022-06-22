@@ -110,7 +110,7 @@ bool print_until_first_curlies(GenericStringSlice<Char> format, size_t* cur_chun
     };
     *cur_chunk_begin = 0;
     ParseState state = ParseState::Normal;
-    for(size_t i = 0; i < format.size(); i++) {
+    for(auto i: format.indices()) {
         switch(state) {
             case ParseState::Normal: {
                 if(format[i] == '{') {
@@ -266,7 +266,7 @@ void zw_display(const zw::Array<D>& array) {
         zw_println("[");
         {
             zw_set_ctx(indent, zw_get_ctx(indent) + 4);
-            for(size_t i = 0; i < array.size(); i++) {
+            for(auto i: array.indices()) {
                 zw_println("{}{},", zw::Indentation(), array[i]);
             }
         }

@@ -49,7 +49,7 @@ struct StaticString {
     char data[N];
     static constexpr size_t num = N;
     constexpr StaticString(const char (&string)[N]) {
-        for(size_t i = 0; i < N; i++) {
+        for(auto i: Range(N)) {
             data[i] = string[i];
         }
     }

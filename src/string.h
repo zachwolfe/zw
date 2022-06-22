@@ -54,6 +54,7 @@ public:
 
     const Char* data() const { return _data; }
     size_t size() const { return _size; }
+    Range indices() const { return Range(_size); }
 
     constexpr Char operator[](size_t i) const {
         assert(i < _size);
@@ -97,7 +98,7 @@ public:
     bool starts_with_ignoring_case(GenericStringSlice<Char> other) const {
         if(other._size > _size) return false;
 
-        for(size_t i = 0; i < other._size; i++) {
+        for(auto i: other.indices()) {
             if(priv::to_lower(other[i]) != priv::to_lower((*this)[i])) {
                 return false;
             }
@@ -114,7 +115,7 @@ public:
         if(other._size > _size) return false;
 
         size_t begin = _size - other._size;
-        for(size_t i = begin; i < _size; i++) {
+        for(auto i: Range(begin, _size)) {
             if(priv::to_lower(other[i - begin]) != priv::to_lower((*this)[i])) {
                 return false;
             }
@@ -187,6 +188,7 @@ public:
     const Char* data() const { return characters.data(); }
     Char* data() { return characters.data(); }
     size_t size() const { return characters.size() ? characters.size() - 1 : 0; }
+    Range indices() const { return Range(size()); }
     operator GenericStringSlice<Char>() const {
         return GenericStringSlice<Char>(data(), size());
     }
