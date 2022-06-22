@@ -110,7 +110,7 @@ bool print_until_first_curlies(GenericStringSlice<Char> format, size_t* cur_chun
     };
     *cur_chunk_begin = 0;
     ParseState state = ParseState::Normal;
-    for(size_t i = 0; i < format.size; i++) {
+    for(size_t i = 0; i < format.size(); i++) {
         switch(state) {
             case ParseState::Normal: {
                 if(format[i] == '{') {
@@ -165,9 +165,9 @@ void print(GenericStringSlice<Char> format, D0&& d0, Ds&&... ds) {
     bool found_curlies = impl::print_until_first_curlies(format, &cur_chunk_begin);
     assert(found_curlies && "Too many arguments passed to fmt function");
     ::zw_display(std::forward<D0>(d0));
-    if(cur_chunk_begin < format.size) {
-        impl::print(format[Range(cur_chunk_begin, format.size)], std::forward<Ds>(ds)...);
-    } else if(cur_chunk_begin > format.size) {
+    if(cur_chunk_begin < format.size()) {
+        impl::print(format[Range(cur_chunk_begin, format.size())], std::forward<Ds>(ds)...);
+    } else if(cur_chunk_begin > format.size()) {
         abort();
     }
 }

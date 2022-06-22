@@ -41,25 +41,29 @@ namespace priv {
 };
 
 template<typename Char>
-struct GenericStringSlice {
-    const Char* data = 0;
-    size_t size = 0;
+class GenericStringSlice {
+    const Char* _data = 0;
+    size_t _size = 0;
 
+public:
     constexpr GenericStringSlice() = default;
-    constexpr GenericStringSlice(const Char* data, size_t size) : data(data), size(size) {}
-    constexpr GenericStringSlice(const Char* c_string) : data(c_string) {
-        size = impl::c_str_size(c_string);
+    constexpr GenericStringSlice(const Char* data, size_t size) : _data(data), _size(size) {}
+    constexpr GenericStringSlice(const Char* c_string) : _data(c_string) {
+        _size = impl::c_str_size(c_string);
     }
 
+    const Char* data() const { return _data; }
+    size_t size() const { return _size; }
+
     constexpr Char operator[](size_t i) const {
-        assert(i < size);
-        return data[i];
+        assert(i < _size);
+        return _data[i];
     }
 
     constexpr GenericStringSlice operator[](Range range) const {
-        assert(range.upper_bound <= size);
+        assert(range.upper_bound <= _size);
         assert(range.lower_bound <= range.upper_bound);
-        return {&data[range.lower_bound], range.upper_bound - range.lower_bound};
+        return {&_data[range.lower_bound], range.upper_bound - range.lower_bound};
     }
 
     NoDestruct<GenericString<Char>> c_string() const {
@@ -86,14 +90,14 @@ struct GenericStringSlice {
     }
 
     bool starts_with(GenericStringSlice<Char> other) const {
-        if(other.size > size) return false;
+        if(other._size > _size) return false;
 
-        return memcmp(data, other.data, sizeof(Char) * other.size) == 0;
+        return memcmp(_data, other._data, sizeof(Char) * other._size) == 0;
     }
     bool starts_with_ignoring_case(GenericStringSlice<Char> other) const {
-        if(other.size > size) return false;
+        if(other._size > _size) return false;
 
-        for(size_t i = 0; i < other.size; i++) {
+        for(size_t i = 0; i < other._size; i++) {
             if(priv::to_lower(other[i]) != priv::to_lower((*this)[i])) {
                 return false;
             }
@@ -102,15 +106,15 @@ struct GenericStringSlice {
         return true;
     }
     bool ends_with(GenericStringSlice<Char> other) const {
-        if(other.size > size) return false;
+        if(other._size > _size) return false;
 
-        return memcmp(data + size - other.size, other.data, sizeof(Char) * other.size) == 0;
+        return memcmp(_data + _size - other._size, other._data, sizeof(Char) * other._size) == 0;
     }
     bool ends_with_ignoring_case(GenericStringSlice<Char> other) const {
-        if(other.size > size) return false;
+        if(other._size > _size) return false;
 
-        size_t begin = size - other.size;
-        for(size_t i = begin; i < size; i++) {
+        size_t begin = _size - other._size;
+        for(size_t i = begin; i < _size; i++) {
             if(priv::to_lower(other[i - begin]) != priv::to_lower((*this)[i])) {
                 return false;
             }
@@ -119,12 +123,12 @@ struct GenericStringSlice {
         return true;
     }
     bool is_equal_to_ignoring_case(GenericStringSlice<Char> other) const {
-        return (size == other.size) && starts_with_ignoring_case(other);
+        return (_size == other._size) && starts_with_ignoring_case(other);
     }
     bool operator==(GenericStringSlice<Char> other) const {
-        if(size != other.size) return false;
+        if(_size != other._size) return false;
 
-        return memcmp(data, other.data, sizeof(Char) * size) == 0;
+        return memcmp(_data, other._data, sizeof(Char) * _size) == 0;
     }
 };
 
@@ -137,12 +141,12 @@ class GenericString {
 public:
     GenericString() = default;
     GenericString(GenericStringSlice<Char> slice) {
-        if(slice.size) {
-            assert(slice.data);
-            characters.reserve(slice.size + 1);
-            memcpy(characters.data(), slice.data, slice.size * sizeof(Char));
-            characters.unsafe_set_size(slice.size + 1);
-            characters[slice.size] = 0;
+        if(slice.size()) {
+            assert(slice.data());
+            characters.reserve(slice.size() + 1);
+            memcpy(characters.data(), slice.data(), slice.size() * sizeof(Char));
+            characters.unsafe_set_size(slice.size() + 1);
+            characters[slice.size()] = 0;
         }
     }
 
@@ -151,9 +155,9 @@ public:
     template<typename Char=Char>
     requires std::same_as<Char, char>
     GenericString(WideStringSlice wide_string) {
-        int length = WideCharToMultiByte(CP_UTF8, 0, wide_string.data, (int)wide_string.size, nullptr, 0, nullptr, nullptr);
+        int length = WideCharToMultiByte(CP_UTF8, 0, wide_string.data(), (int)wide_string.size(), nullptr, 0, nullptr, nullptr);
         characters.reserve(length + 1);
-        int code = WideCharToMultiByte(CP_UTF8, 0, wide_string.data, -1, characters.data(), length, nullptr, nullptr);
+        int code = WideCharToMultiByte(CP_UTF8, 0, wide_string.data(), -1, characters.data(), length, nullptr, nullptr);
         characters.unsafe_set_size(length);
         characters[size()] = 0;
     }
@@ -191,12 +195,12 @@ public:
     }
 
     void append(GenericStringSlice<Char> slice) {
-        if(slice.size) {
-            assert(slice.data);
+        if(slice.size()) {
+            assert(slice.data());
             size_t og_size = size();
-            size_t new_size = og_size + slice.size;
+            size_t new_size = og_size + slice.size();
             characters.reserve(new_size + 1);
-            memcpy(characters.data() + og_size, slice.data, slice.size * sizeof(Char));
+            memcpy(characters.data() + og_size, slice.data(), slice.size() * sizeof(Char));
             characters.unsafe_set_size(new_size + 1);
             characters[new_size] = 0;
         }

@@ -16,11 +16,11 @@ extern StdFilePrinter stderr_printer{stderr};
 extern DebugPrinter debug_printer{};
 
 void StdFilePrinter::print(StringSlice string) {
-    fprintf(file, "%.*s", (uint32_t)string.size, string.data);
+    fprintf(file, "%.*s", (uint32_t)string.size(), string.data());
 }
 
 void StdFilePrinter::print(WideStringSlice string) {
-    fprintf(file, "%.*S", (uint32_t)string.size, string.data);
+    fprintf(file, "%.*S", (uint32_t)string.size(), string.data());
 }
 
 void DebugPrinter::print(StringSlice string) {
