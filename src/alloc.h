@@ -281,6 +281,10 @@ public:
         return std::move(_object);
     }
 
+    void destruct() {
+        _object.~Wrapped();
+    }
+
     ~NoDestruct() {}
 };
 
