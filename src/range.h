@@ -25,7 +25,7 @@ struct Range {
     Range(size_t upper_bound) : lower_bound(0), upper_bound(upper_bound) {}
 
     RangeIterator begin() const { return {lower_bound}; }
-    RangeIterator end() const { return {lower_bound}; }
+    RangeIterator end() const { return {upper_bound}; }
 };
 
 };
