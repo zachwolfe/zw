@@ -133,6 +133,12 @@ public:
     }
 };
 
+template<typename T, typename Char>
+concept StringConcept = requires(const T& str) {
+    { str.data() } -> std::same_as<const Char*>;
+    { str.size() } -> std::same_as<size_t>;
+};
+
 using StringSlice = GenericStringSlice<char>;
 using WideStringSlice = GenericStringSlice<wchar_t>;
 
@@ -152,6 +158,9 @@ public:
     }
 
     GenericString(const Char* c_string) : GenericString(GenericStringSlice<Char>(c_string)) {}
+
+    /// This overload exists in order to support converting from std::string, std::wstring, std::vector<Char> or even zw::Array<Char>
+    GenericString(const StringConcept<Char> auto& str) : GenericString(GenericStringSlice<Char>{str.data(), str.size()}) {}
 
     template<typename Char=Char>
     requires std::same_as<Char, char>
