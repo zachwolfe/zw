@@ -15,8 +15,6 @@ public:
         _is_present = false;
     }
 
-    Option(std::nullopt_t)
-
     Option(Wrapped&& object) {
         new(&_object) Wrapped(std::move(object));
         _is_present = true;
@@ -40,6 +38,9 @@ public:
 
     Option& operator=(Option<Wrapped>&& other) {
         if(this != &other) {
+            if(_is_present) {
+                _object.~Wrapped();
+            }
             _is_present = other._is_present;
             if(other._is_present) {
                 new(&_object) Wrapped(std::move(other._object));
@@ -52,8 +53,11 @@ public:
 
     Option& operator=(const Option<Wrapped>& other) {
         if(this != &other) {
+            if(_is_present) {
+                _object.~Wrapped();
+            }
             _is_present = other._is_present;
-            new(&_object) Wrapped(&other._object);
+            new(&_object) Wrapped(other._object);
         }
         return *this;
     }
@@ -75,8 +79,11 @@ public:
         return _object;
     }
 
-    Wrapped&& take() {
+    /// Just like unwrap(), except it moves the object out of the Option
+    /// Does not run destructor on moved-from object
+    Wrapped take() {
         assert(_is_present);
+        _is_present = false;
         return std::move(_object);
     }
 };
